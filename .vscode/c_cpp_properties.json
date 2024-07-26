@@ -1,0 +1,21 @@
+{
+    "configurations": [
+      {
+        "defines": [
+          "__GNUC__",
+          "__UNIX__",
+          "__aarch64__"
+        ],
+        "includePath": [
+          "${workspaceFolder}/Nandroid_daemon/include/**",
+          "C:/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/**",
+          "${workspaceFolder}/Nandroid_shared/**"
+        ],
+        "name": "Quest",
+        "cStandard": "c11",
+        "cppStandard": "c++20",
+        "intelliSenseMode": "clang-x64"
+      }
+    ],
+    "version": 4
+  }
