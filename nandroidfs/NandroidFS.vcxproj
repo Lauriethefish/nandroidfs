@@ -165,6 +165,15 @@
     <ClInclude Include="WinSockException.hpp" />
     <ClInclude Include="dokan_no_winsock.h" />
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\nandroid_daemon\libs\arm64-v8a\nandroid-daemon">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <Content Include="..\nandroid_daemon\libs\arm64-v8a\nandroid-daemon">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

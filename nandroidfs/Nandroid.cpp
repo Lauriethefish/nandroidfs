@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <iostream>
 
-LPCWSTR AGENT_PATH = L"..\\nandroid_daemon\\libs\\arm64-v8a\\nandroid-daemon";
+LPCWSTR AGENT_PATH = L"nandroid-daemon";
 LPCWSTR AGENT_DEST_PATH = L"/data/local/tmp/nandroid-daemon";
 
 namespace nandroidfs 
