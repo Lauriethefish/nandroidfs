@@ -149,6 +149,7 @@
     <ClCompile Include="Nandroid.cpp" />
     <ClCompile Include="operations.cpp" />
     <ClCompile Include="Adb.cpp" />
+    <ClCompile Include="StatCache.cpp" />
     <ClCompile Include="WinSockException.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -162,6 +163,7 @@
     <ClInclude Include="Nandroid.hpp" />
     <ClInclude Include="operations.hpp" />
     <ClInclude Include="Adb.hpp" />
+    <ClInclude Include="StatCache.hpp" />
     <ClInclude Include="WinSockException.hpp" />
     <ClInclude Include="dokan_no_winsock.h" />
   </ItemGroup>

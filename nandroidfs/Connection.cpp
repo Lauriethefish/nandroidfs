@@ -7,7 +7,9 @@
 
 namespace nandroidfs {
 	Connection::Connection(std::string address, uint16_t port) 
-		: writer(DataWriter(this, BUFFER_SIZE)), reader(DataReader(this, BUFFER_SIZE)) {
+		: writer(DataWriter(this, BUFFER_SIZE)), 
+		reader(DataReader(this, BUFFER_SIZE)),
+		stat_cache(StatCache(STAT_SCAN_PERIOD, STAT_CACHE_PERIOD)) {
 		WSADATA wsa_data;
 		throw_if_nonzero(WSAStartup(MAKEWORD(2, 2), &wsa_data));
 		try {
@@ -108,9 +110,14 @@ namespace nandroidfs {
 	}
 
 	ResponseStatus Connection::req_stat_file(LPCWSTR path, FileStat& out_file_stat) {
-		std::lock_guard guard(request_mutex);
-
 		std::string unix_path = win32_path_to_unix(path);
+		// Attempt to use a cached version of the stat.
+		auto cached_stat = stat_cache.get_cached_stat(unix_path);
+		if (cached_stat.has_value()) {
+			out_file_stat = *cached_stat;
+		}
+
+		std::lock_guard guard(request_mutex);
 		// Skip any requests for desktop.ini.
 		// Windows requests this about 6000 times each time you click a directory in file explorer.
 		// If somebody actually needs a file with this name, they can complain to me later.
@@ -128,11 +135,16 @@ namespace nandroidfs {
 		}
 
 		out_file_stat = FileStat(reader);
+		// Cache the stat for future calls
+		stat_cache.cache_stat(unix_path, out_file_stat);
+
 		return ResponseStatus::Success;
 	}
 
 	ResponseStatus Connection::req_list_file_stats(LPCWSTR path, std::function<void(FileStat stat, std::wstring file_name)> consume_stat) {
 		std::lock_guard guard(request_mutex);
+
+		std::string unix_dir_path = win32_path_to_unix(path);
 
 		writer.write_byte((uint8_t) RequestType::ListDirectory);
 		writer.write_utf8_string(win32_path_to_unix(path));
@@ -143,12 +155,22 @@ namespace nandroidfs {
 			return status;
 		}
 
+		if (!unix_dir_path.ends_with('/')) {
+			unix_dir_path.push_back('/');
+		}
+
 		ResponseStatus entry_status;
 		while((entry_status = (ResponseStatus) reader.read_byte()) != ResponseStatus::NoMoreEntries)
 		{
 			if (entry_status == ResponseStatus::Success) {
 				std::string file_name = reader.read_utf8_string();
-				consume_stat(FileStat(reader), unix_path_to_win32(file_name));
+				FileStat entry_stat(reader);
+				std::string full_entry_path = unix_dir_path;
+				full_entry_path.append(file_name);
+
+				stat_cache.cache_stat(full_entry_path, entry_stat);
+
+				consume_stat(entry_stat, unix_path_to_win32(file_name));
 			}
 			// TODO: Right now we're skipping files with AccessDenied, maybe in the future we can show these files in some way?
 			// We know the filename, but we have no clue if they're files or directories.
@@ -160,8 +182,14 @@ namespace nandroidfs {
 	ResponseStatus Connection::req_move_entry(LPCWSTR from_path, LPCWSTR to_path, bool replace_if_exists) {
 		std::lock_guard guard(request_mutex);
 
+		std::string unix_from_path = win32_path_to_unix(from_path);
+		std::string unix_to_path = win32_path_to_unix(to_path);
+
+		stat_cache.invalidate_stat(unix_from_path);
+		stat_cache.invalidate_stat(unix_to_path);
+
 		writer.write_byte((uint8_t)RequestType::MoveEntry);
-		MoveEntryArgs args(win32_path_to_unix(from_path), win32_path_to_unix(to_path), replace_if_exists);
+		MoveEntryArgs args(unix_from_path, unix_to_path, replace_if_exists);
 		args.write(writer);
 		writer.flush();
 
@@ -171,8 +199,11 @@ namespace nandroidfs {
 	ResponseStatus Connection::req_remove_file(LPCWSTR path) {
 		std::lock_guard guard(request_mutex);
 
+		std::string unix_path = win32_path_to_unix(path);
+		stat_cache.invalidate_stat(unix_path);
+
 		writer.write_byte((uint8_t)RequestType::RemoveFile);
-		writer.write_utf8_string(win32_path_to_unix(path));
+		writer.write_utf8_string(unix_path);
 		writer.flush();
 
 		return (ResponseStatus) reader.read_byte();
@@ -191,8 +222,11 @@ namespace nandroidfs {
 	ResponseStatus Connection::req_remove_directory(LPCWSTR path) {
 		std::lock_guard guard(request_mutex);
 
+		std::string unix_path = win32_path_to_unix(path);
+		stat_cache.invalidate_stat(unix_path);
+
 		writer.write_byte((uint8_t)RequestType::RemoveDirectory);
-		writer.write_utf8_string(win32_path_to_unix(path));
+		writer.write_utf8_string(unix_path);
 		writer.flush();
 
 		return (ResponseStatus)reader.read_byte();
@@ -211,8 +245,11 @@ namespace nandroidfs {
 	ResponseStatus Connection::req_create_directory(LPCWSTR path) {
 		std::lock_guard guard(request_mutex);
 
+		std::string unix_path = win32_path_to_unix(path);
+		stat_cache.invalidate_stat(unix_path);
+
 		writer.write_byte((uint8_t)RequestType::CreateDirectory);
-		writer.write_utf8_string(win32_path_to_unix(path));
+		writer.write_utf8_string(unix_path);
 		writer.flush();
 
 		return (ResponseStatus)reader.read_byte();
@@ -307,9 +344,12 @@ namespace nandroidfs {
 	ResponseStatus Connection::req_set_file_time(LPCWSTR path, uint64_t access_time, uint64_t write_time) {
 		std::lock_guard guard(request_mutex);
 
+		std::string unix_path = win32_path_to_unix(path);
+		stat_cache.invalidate_stat(unix_path);
+
 		writer.write_byte((uint8_t)RequestType::SetFileTime);
 
-		SetFileTimeArgs args(win32_path_to_unix(path), access_time, write_time);
+		SetFileTimeArgs args(unix_path, access_time, write_time);
 		args.write(writer);
 		writer.flush();
 
@@ -361,6 +401,9 @@ namespace nandroidfs {
 		kill_data_log = true;
 		request_mutex.unlock();
 		data_log_thread.join();
+
+		CacheStatistics stats = stat_cache.get_cache_statistics();
+		std::cout << "Cache hit rate: " << (100.0 * stats.total_cache_hits / stats.total_stats_fetched) << std::endl;
 #endif
 
 		closesocket(conn_sock);

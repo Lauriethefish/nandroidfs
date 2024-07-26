@@ -12,10 +12,14 @@
 
 #include "serialization.hpp"
 #include "responses.hpp"
+#include "StatCache.hpp"
 
 #define BUFFER_SIZE 4096
 
 namespace nandroidfs {
+	const ms_duration STAT_CACHE_PERIOD = std::chrono::milliseconds(200);
+	const ms_duration STAT_SCAN_PERIOD = std::chrono::milliseconds(5000);
+
 	class Connection : Readable, Writable {
 	public:
 		// Creates a new instance of the Connection class
@@ -73,6 +77,8 @@ namespace nandroidfs {
 		DataReader reader;
 		std::mutex request_mutex;
 		std::thread data_log_thread;
+
+		StatCache stat_cache;
 
 #ifdef _DEBUG
 		int data_written = 0;
