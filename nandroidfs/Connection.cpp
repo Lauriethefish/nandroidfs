@@ -456,11 +456,11 @@ namespace nandroidfs {
 		request_mutex.lock();
 		kill_data_log = true;
 		request_mutex.unlock();
+
 		data_log_thread.join();
 
 		std::cout << "Stat cache::" << stat_cache.get_cache_statistics() << std::endl;
 		std::cout << "Dir listing cache::" << dir_list_cache.get_cache_statistics() << std::endl;
-
 #endif
 
 		closesocket(conn_sock);

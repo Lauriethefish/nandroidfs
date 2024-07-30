@@ -20,13 +20,21 @@ namespace nandroidfs
 	}
 
 	Nandroid::~Nandroid() {
+		// Stop dokan calls first so that we can safely delete the connection.
+		std::cout << "Closing dokan instance" << std::endl;
+		if (instance) {
+			DokanCloseHandle(instance);
+		}
+
 		if (connection) {
+			std::cout << "Dropping connection" << std::endl;
 			// Delete the connection immediately
 			// This will cause the agent to exit as it loses connection ...
-			delete connection;	
+			delete connection;
 		}
 
 		{
+			std::cout << "Dropping ready lock" << std::endl;
 			std::unique_lock lock(mtx_agent_ready);
 			bool notified = cv_agent_dead.wait_for(lock, std::chrono::milliseconds(2000), [this] { return this->agent_dead_notified; });
 			if (!notified) {
@@ -41,10 +49,8 @@ namespace nandroidfs
 			}
 		}
 
+		std::cout << "Waiting for agent invoke thread to stop" << std::endl;
 		this->agent_invoke_thread.join();
-		if (instance) {
-			DokanCloseHandle(instance);
-		}
 	}
 
 	void Nandroid::unmount() {

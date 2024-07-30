@@ -28,6 +28,7 @@ namespace nandroidfs
 		void begin();
 
 		Connection& get_conn();
+
 		std::string get_device_serial();
 		std::wstring get_device_serial_wide();
 

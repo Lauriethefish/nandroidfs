@@ -14,7 +14,7 @@ namespace nandroidfs {
 	void invoke_process_capture_output(LPCWSTR command_line, int& out_exit_code,
 		// Takes in the stdout and stderr from the process.
 		// The output is in a buffer at the provided pointer and has the specified `length` in bytes.
-		OutputCapture consume_output);
+		OutputCapture consume_output, DWORD flags = 0);
 
 	// Invokes a process with the provided name and arguments, and captures its stdout and stderr.
 	// These are saved in the provided string
@@ -32,5 +32,7 @@ namespace nandroidfs {
 	// Invokes ADB with the specified serial number and arguments
 	// Forwards stdout and stderr to the provided function.
 	// Returns the exit code (will not throw on nonzero exit code)
+	// Using this method also ensures that the process will not receive any Ctrl + C termination signals
+	// sent to this process from the console.
 	int invoke_adb_capture_output(std::wstring_view serial, std::wstring_view args, OutputCapture consume_output);
 }

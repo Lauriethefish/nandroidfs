@@ -21,7 +21,7 @@ namespace nandroidfs {
 		}
 	}
 
-	PROCESS_INFORMATION create_process(HANDLE child_stdout_write, LPCWSTR command_line) {
+	PROCESS_INFORMATION create_process(HANDLE child_stdout_write, LPCWSTR command_line, DWORD flags) {
 		// Set options needed to start the process.
 		PROCESS_INFORMATION process_info;
 		STARTUPINFO start_info;
@@ -44,7 +44,7 @@ namespace nandroidfs {
 			nullptr, // No extra security attributes
 			nullptr,
 			true, // Inherit handles.
-			0,
+			flags,
 			nullptr, // Same environment as this process
 			nullptr, // Same CWD as this process.
 			&start_info,
@@ -59,13 +59,13 @@ namespace nandroidfs {
 	}
 
 	void invoke_process_capture_output(LPCWSTR command_line, int& out_exit_code,
-		OutputCapture consume_output) {
+		OutputCapture consume_output, DWORD flags) {
 		// Create a pipe for the process stdout and stderr.
 		HANDLE child_stdout_read, child_stdout_write;
 		create_stdouterr_pipes(&child_stdout_write, &child_stdout_read);
 
 		// Now ready to actually create the process.
-		PROCESS_INFORMATION process_info = create_process(child_stdout_write, command_line);
+		PROCESS_INFORMATION process_info = create_process(child_stdout_write, command_line, flags);
 		CloseHandle(child_stdout_write); // Close the write handle to the child's stdout FROM THIS PROCESS
 		// This means that the ReadFile call will EOF when the child process exits.
 
@@ -138,7 +138,7 @@ namespace nandroidfs {
 		std::wstring format_result = std::format(L"{} -s {} {}", ADB_PATH, serial, args);
 		
 		int exit_code;
-		invoke_process_capture_output(format_result.c_str(), exit_code, consume_output);
+		invoke_process_capture_output(format_result.c_str(), exit_code, consume_output, /* prevent Ctrl+C interrupts: */ CREATE_NEW_PROCESS_GROUP);
 		return exit_code;
 	}
 }
