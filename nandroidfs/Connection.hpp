@@ -12,7 +12,7 @@
 
 #include "serialization.hpp"
 #include "responses.hpp"
-#include "StatCache.hpp"
+#include "TimedCache.hpp"
 
 #define BUFFER_SIZE 4096
 
@@ -78,7 +78,10 @@ namespace nandroidfs {
 		std::mutex request_mutex;
 		std::thread data_log_thread;
 
-		StatCache stat_cache;
+		TimedCache<FileStat> stat_cache;
+		// Cache of the entry names of the entries in directories.
+		// Does NOT include the full entry path to save memory. Does NOT include the stat as that is kept separately in the stat cache.
+		TimedCache<std::vector<std::string>> dir_list_cache;
 
 #ifdef _DEBUG
 		int data_written = 0;
@@ -87,6 +90,11 @@ namespace nandroidfs {
 		void data_log_entry_point();
 		bool kill_data_log = false;
 #endif
+		bool try_use_cached_dir_listing(std::string& unix_dir_path, std::function<void(FileStat stat, std::wstring file_name)> consume_stat);
+		// Invalidates the cached directory listing for the parent of `path`.
+		// This does nothing if `path` has no parent.
+		void invalidate_parent_dir(std::string& path);
+
 		void handshake();
 
 		virtual int read(uint8_t* buffer, int length);

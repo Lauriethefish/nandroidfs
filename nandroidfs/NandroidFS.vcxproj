@@ -139,6 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\nandroid_shared\path_utils.cpp" />
     <ClCompile Include="..\nandroid_shared\requests.cpp" />
     <ClCompile Include="..\nandroid_shared\responses.cpp" />
     <ClCompile Include="..\nandroid_shared\serialization.cpp" />
@@ -149,10 +150,10 @@
     <ClCompile Include="Nandroid.cpp" />
     <ClCompile Include="operations.cpp" />
     <ClCompile Include="Adb.cpp" />
-    <ClCompile Include="StatCache.cpp" />
     <ClCompile Include="WinSockException.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\nandroid_shared\path_utils.hpp" />
     <ClInclude Include="..\nandroid_shared\requests.hpp" />
     <ClInclude Include="..\nandroid_shared\responses.hpp" />
     <ClInclude Include="..\nandroid_shared\serialization.hpp" />
@@ -163,7 +164,7 @@
     <ClInclude Include="Nandroid.hpp" />
     <ClInclude Include="operations.hpp" />
     <ClInclude Include="Adb.hpp" />
-    <ClInclude Include="StatCache.hpp" />
+    <ClInclude Include="TimedCache.hpp" />
     <ClInclude Include="WinSockException.hpp" />
     <ClInclude Include="dokan_no_winsock.h" />
   </ItemGroup>

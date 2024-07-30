@@ -48,7 +48,7 @@
     <ClCompile Include="DeviceTracker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StatCache.cpp">
+    <ClCompile Include="..\nandroid_shared\path_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -89,7 +89,10 @@
     <ClInclude Include="DeviceTracker.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StatCache.hpp">
+    <ClInclude Include="TimedCache.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\nandroid_shared\path_utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

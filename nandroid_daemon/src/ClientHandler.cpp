@@ -2,6 +2,7 @@
 #include "UnixException.hpp"
 #include "requests.hpp"
 #include "responses.hpp"
+#include "path_utils.hpp"
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -91,12 +92,8 @@ namespace nandroidfs {
 
     void ClientHandler::handle_list_dir_stats() {
         std::string directory_path = reader.read_utf8_string();
-        if(!directory_path.ends_with('/')) {
-            directory_path.push_back('/');
-        }
-        //std::cout << "Listing " << directory_path << std::endl;
+        //std::cout << "list_dir_stats: " << directory_path << std::endl;
 
-        //std::cout << "Handling list dir, path: " << directory_path << std::endl;
         DIR* dir = opendir(directory_path.c_str());
         if(!dir) {
             writer.write_byte((uint8_t) get_status_from_errno());
@@ -109,8 +106,7 @@ namespace nandroidfs {
         // Then write all the directory stats until a nullptr reached.
         dirent* current_entry = readdir(dir);
         while(current_entry) {
-            std::string full_entry_path = directory_path;
-            full_entry_path.append(current_entry->d_name);
+            std::string full_entry_path = get_full_path(directory_path, current_entry->d_name);
 
             FileStat stat;
             ResponseStatus status = stat_file(full_entry_path.c_str(), &stat);
@@ -352,21 +348,16 @@ namespace nandroidfs {
     // Returns ResponseStatus::Success if the parent directory has read, write and execute permissions allowed for the current process.
     // Gives ResponseStatus::AccessDenied if any of these permissions are missing.
     ResponseStatus can_remove_directory_entry(std::string& path) {
-        // Remove trailing slash if there is one.
-        if(path.ends_with('/')) {
-            path.pop_back();
-        }
-        size_t last_slash_index = path.find_last_of('/');
+        std::optional<std::string> parent_dir_path = get_parent_path(path);
+
         // No parent directory
         // Give AccessDenied since trying to remove the root is obviously a dumb idea.
-        if(last_slash_index == std::string::npos) {
+        if(!parent_dir_path.has_value()) {
             return ResponseStatus::AccessDenied;
         }
 
-        std::string parent_dir_path = path.substr(last_slash_index);
-
         // Use the `access` syscall to see if we can actually read/write/ex the file with this mode.
-        if(access(parent_dir_path.c_str(), R_OK | W_OK | X_OK)) {
+        if(access(parent_dir_path->c_str(), R_OK | W_OK | X_OK)) {
             return ResponseStatus::Success;
         }   else    {
             return get_status_from_errno();
@@ -429,13 +420,12 @@ namespace nandroidfs {
                 std::cout << "Disconnected from client" << std::endl;
                 return;
             }
-            //std::cout << "Request type: " << std::to_string(((uint8_t) req_type)) << std::endl;
 
             switch(req_type) {
                 case RequestType::StatFile:
                 {
                     std::string file_path = reader.read_utf8_string();
-                    //std::cout << "stat_file " << file_path << std::endl;
+                    //std::cout << "stat_file: " << file_path << std::endl;
                     FileStat stat;
                     ResponseStatus status = stat_file(file_path.c_str(), &stat);
 

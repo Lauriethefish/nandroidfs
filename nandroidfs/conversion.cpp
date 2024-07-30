@@ -81,6 +81,11 @@ namespace nandroidfs {
         unix_path.resize(size_needed - 1);
 
         std::replace(unix_path.begin(), unix_path.end(), '\\', '/');
+        // Normalise by removing the trailing `/` unless the path is the root.
+        if (unix_path.length() > 1 && unix_path.ends_with('/')) {
+            unix_path.pop_back();
+        }
+
         return unix_path;
     }
 

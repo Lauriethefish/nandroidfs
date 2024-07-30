@@ -2,14 +2,14 @@
 #include <iostream>
 
 namespace nandroidfs {
-	StatCache::StatCache(ms_duration cache_scan_interval,
+	TimedCache::TimedCache(ms_duration cache_scan_interval,
 		ms_duration cached_stat_valid_for) {
 		this->cache_scan_interval = cache_scan_interval;
 		this->cached_stat_valid_for = cached_stat_valid_for;
 		this->last_cache_scan = std::chrono::steady_clock::now();
 	}
 
-	CacheStatistics StatCache::get_cache_statistics() {
+	CacheStatistics TimedCache::get_cache_statistics() {
 		CacheStatistics ret;
 		ret.total_cache_hits = total_cache_hits.load();
 		ret.total_stats_fetched = total_stats_fetched.load();
@@ -17,7 +17,7 @@ namespace nandroidfs {
 		return ret;
 	}
 
-	std::optional<FileStat> StatCache::get_cached_stat(std::string& file_path) {
+	std::optional<FileStat> TimedCache::get_cached_stat(std::string& file_path) {
 		std::shared_lock lock(cache_mutex);
 		total_stats_fetched++;
 
@@ -40,7 +40,7 @@ namespace nandroidfs {
 		return std::nullopt;
 	}
 
-	void StatCache::cache_stat(std::string file_path, FileStat stat) {
+	void TimedCache::cache_stat(std::string file_path, FileStat stat) {
 		std::unique_lock lock(cache_mutex);
 		auto now = std::chrono::steady_clock::now();
 
@@ -57,7 +57,7 @@ namespace nandroidfs {
 		}
 	}
 
-	void StatCache::clean_cache() {
+	void TimedCache::clean_cache() {
 		std::cout << "Cleaning stat cache" << std::endl;
 		auto now = std::chrono::steady_clock::now();
 
@@ -78,7 +78,7 @@ namespace nandroidfs {
 		std::cout << "Complete - " << removed << " stats removed" << std::endl;
 	}
 
-	void StatCache::invalidate_stat(std::string& file_path) {
+	void TimedCache::invalidate_stat(std::string& file_path) {
 		// Initially get a shared lock since if there isn't a cached stat for this path,
 		// then we will never need to write to the map
 		{

@@ -88,7 +88,16 @@
         "__split_buffer": "cpp",
         "__threading_support": "cpp",
         "__verbose_abort": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "map": "cpp",
+        "shared_mutex": "cpp",
+        "xstddef": "cpp",
+        "xtree": "cpp",
+        "__functional_base": "cpp",
+        "__nullptr": "cpp",
+        "__string": "cpp",
+        "__tree": "cpp",
+        "__tuple": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

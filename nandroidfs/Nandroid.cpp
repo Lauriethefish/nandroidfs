@@ -101,7 +101,7 @@ namespace nandroidfs
 			std::cerr << ex.what() << std::endl;
 		}
 
-		// Inform (the destructor) that the agent is no longer running (or failed to run.)
+		// Notify (the destructor) that the agent is no longer running (or failed to run.)
 		std::unique_lock lock(mtx_agent_ready);
 		agent_ready = false;
 		agent_ready_notified = true;
