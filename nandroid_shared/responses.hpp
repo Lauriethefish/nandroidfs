@@ -30,7 +30,6 @@ namespace nandroidfs
         // Unix file mode.
         uint16_t mode;
         // File size, in bytes.
-        // TODO: Make this 64 bit.
         uint64_t size;
 
         // All times are measured in seconds since 01/01/1970.

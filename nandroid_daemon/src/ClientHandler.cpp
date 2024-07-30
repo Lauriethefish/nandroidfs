@@ -51,7 +51,9 @@ namespace nandroidfs {
     }
 
     ResponseStatus get_status_from_errno() {
-        switch(errno) {
+        int err_num = errno;
+        //std::cout << "errno: " << err_num << strerror(err_num) << std::endl;
+        switch(err_num) {
             case EACCES:
                 return ResponseStatus::AccessDenied;
             case ENOENT:
@@ -349,17 +351,16 @@ namespace nandroidfs {
     // Gives ResponseStatus::AccessDenied if any of these permissions are missing.
     ResponseStatus can_remove_directory_entry(std::string& path) {
         std::optional<std::string> parent_dir_path = get_parent_path(path);
-
-        // No parent directory
-        // Give AccessDenied since trying to remove the root is obviously a dumb idea.
-        if(!parent_dir_path.has_value()) {
-            return ResponseStatus::AccessDenied;
+        if(!parent_dir_path.has_value()) { // Trying to delete the root
+            return ResponseStatus::AccessDenied; // Obviously a bad idea, deny access.
         }
 
+        std::cout << "Parent path: " << parent_dir_path.value() << " len: " << parent_dir_path->length() << std::endl;
         // Use the `access` syscall to see if we can actually read/write/ex the file with this mode.
-        if(access(parent_dir_path->c_str(), R_OK | W_OK | X_OK)) {
+        if(faccessat(0, parent_dir_path->c_str(), R_OK | W_OK | X_OK, AT_EACCESS)) {
             return ResponseStatus::Success;
         }   else    {
+            std::cout << "Failed to remove dir entry" << std::endl;
             return get_status_from_errno();
         }
     }
@@ -374,11 +375,14 @@ namespace nandroidfs {
     void ClientHandler::handle_check_remove_directory() {
         // To remove a directory, there is a secondary requirement: it needs to be empty.
         std::string dir_path = reader.read_utf8_string();
+        std::cout << "Check remove dir: " << dir_path << std::endl; 
         ResponseStatus can_rem_entry = can_remove_directory_entry(dir_path);
         if(can_rem_entry != ResponseStatus::Success) {
+            std::cout << "FAIL on checking permissions: " << (uint32_t) can_rem_entry << std::endl;
             writer.write_byte((uint8_t) can_rem_entry);
             return;
         }
+        
 
         DIR* dir = opendir(dir_path.c_str());
         if(!dir) {

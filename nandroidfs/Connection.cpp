@@ -277,7 +277,8 @@ namespace nandroidfs {
 		std::lock_guard guard(request_mutex);
 
 		writer.write_byte((uint8_t)RequestType::CheckRemoveDirectory);
-		writer.write_utf8_string(win32_path_to_unix(path));
+		std::string unix_path = win32_path_to_unix(path);
+		writer.write_utf8_string(unix_path);
 		writer.flush();
 
 		return (ResponseStatus)reader.read_byte();
