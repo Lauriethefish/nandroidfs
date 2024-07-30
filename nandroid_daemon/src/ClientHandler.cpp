@@ -189,7 +189,7 @@ namespace nandroidfs {
             creation_flags = O_RDWR; // Both read and write access.
         }
 
-        //std::cout << "Creating handle for " << args.path << " ";
+        //std::cout << "open_handle: " << args.path << std::endl;
         switch(args.mode) {
             case OpenMode::CreateIfNotExist:
                 //std::cout << "create if not exist" << std::endl;
@@ -355,7 +355,6 @@ namespace nandroidfs {
             return ResponseStatus::AccessDenied; // Obviously a bad idea, deny access.
         }
 
-        std::cout << "Parent path: " << parent_dir_path.value() << " len: " << parent_dir_path->length() << std::endl;
         // Use the `access` syscall to see if we can actually read/write/ex the file with this mode.
         if(faccessat(0, parent_dir_path->c_str(), R_OK | W_OK | X_OK, AT_EACCESS)) {
             return ResponseStatus::Success;
@@ -375,15 +374,12 @@ namespace nandroidfs {
     void ClientHandler::handle_check_remove_directory() {
         // To remove a directory, there is a secondary requirement: it needs to be empty.
         std::string dir_path = reader.read_utf8_string();
-        std::cout << "Check remove dir: " << dir_path << std::endl; 
         ResponseStatus can_rem_entry = can_remove_directory_entry(dir_path);
         if(can_rem_entry != ResponseStatus::Success) {
-            std::cout << "FAIL on checking permissions: " << (uint32_t) can_rem_entry << std::endl;
             writer.write_byte((uint8_t) can_rem_entry);
             return;
         }
         
-
         DIR* dir = opendir(dir_path.c_str());
         if(!dir) {
             writer.write_byte((uint8_t) get_status_from_errno());
