@@ -4,8 +4,6 @@
 #include <functional>
 #include "dokan_no_winsock.h"
 
-#define STDOUT_READ_BUF_SIZE 4096
-
 namespace nandroidfs {
 	typedef std::function<void(uint8_t* buf, int length)> OutputCapture;
 
