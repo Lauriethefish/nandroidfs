@@ -2,6 +2,7 @@
 
 #include "dokan_no_winsock.h"
 #include "Connection.hpp"
+#include "Logger.hpp"
 
 #include <string>
 #include <optional>
@@ -18,7 +19,7 @@ namespace nandroidfs
 	public:
 		// Creates a new Nandroid filesystem, intended for use with the ADB device with the given serial number.
 		// The provided port is used to open a TCP connection between the ADB device and this application via `adb forward`.
-		Nandroid(DeviceTracker& parent, std::string device_serial, uint16_t port_num);
+		Nandroid(DeviceTracker& parent, std::string device_serial, uint16_t port_num, ContextLogger& parent_logger);
 		Nandroid() = delete;
 		~Nandroid(); // Destructor unmounts the filesystem if mounted.
 
@@ -28,6 +29,7 @@ namespace nandroidfs
 		void begin();
 
 		Connection& get_conn();
+		ContextLogger& get_operations_logger();
 
 		std::string get_device_serial();
 		std::wstring get_device_serial_wide();
@@ -40,6 +42,10 @@ namespace nandroidfs
 		void handle_daemon_output(uint8_t* buffer, int length);
 
 		void mount_filesystem();
+
+		ContextLogger logger;
+		ContextLogger agent_logger;
+		ContextLogger operations_logger;
 
 		std::string agent_output_buffer;
 

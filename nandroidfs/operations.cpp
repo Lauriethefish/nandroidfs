@@ -7,23 +7,24 @@
 #define NAN_CTX reinterpret_cast<::nandroidfs::Nandroid*>(file_info->DokanOptions->GlobalContext)
 // Utility macro to get the connection from the dokan context.
 #define NAN_CONN NAN_CTX->get_conn()
+#define NAN_LOGGER NAN_CTX->get_operations_logger()
 #define NAN_FILE_CTX reinterpret_cast<::nandroidfs::FileContext*>(file_info->Context)
 #define NAN_HANDLER_START try {
 
 #define NAN_HANDLER_END } catch(::nandroidfs::EOFException&) { \
     } catch(::std::exception& ex) { \
-    ::std::cerr << "Exception in dokan callback: " << ex.what() << " unmounting!" << ::std::endl; \
+        NAN_LOGGER.error("exception in dokan callback: {} unmounting!", ex.what()); \
     } catch(...) { \
-    ::std::cerr << "Unkown exception in dokan callback - unmounting" << ::std::endl; \
+        NAN_LOGGER.error("unkown exception in dokan callback - unmounting"); \
     } \
     NAN_CTX->unmount(); \
     return STATUS_UNSUCCESSFUL; \
 
 #define NAN_HANDLER_END_VOID return; } catch(::nandroidfs::EOFException&) { \
     } catch(::std::exception& ex) { \
-    ::std::cerr << "Exception in dokan callback: " << ex.what() << " unmounting!" << ::std::endl; \
+        NAN_LOGGER.error("exception in dokan callback: {} unmounting!", ex.what()); \
     } catch(...) { \
-    ::std::cerr << "Unkown exception in dokan callback - unmounting" << ::std::endl; \
+        NAN_LOGGER.error("unkown exception in dokan callback - unmounting"); \
     } \
     NAN_CTX->unmount(); \
     return
@@ -58,6 +59,7 @@ namespace nandroidfs {
         Connection& conn,
         DWORD creation_disposition,
         bool file_exists,
+        ContextLogger& logger,
         FileContext* ctx) {
         OpenMode mode;
         switch (creation_disposition) {
@@ -94,7 +96,7 @@ namespace nandroidfs {
                 mode = OpenMode::Truncate;
                 break;
             default:
-                std::cerr << "Unknown creation disposition" << std::endl;
+                logger.error("unknown creation disposition: {}", creation_disposition);
                 return STATUS_UNSUCCESSFUL;
         }
 
@@ -188,7 +190,7 @@ namespace nandroidfs {
         }
         else
         {
-            return handle_create_file(file_name, conn, creation_disposition, entry_exists, context);
+            return handle_create_file(file_name, conn, creation_disposition, entry_exists, NAN_LOGGER, context);
         }
 
         NAN_HANDLER_END;

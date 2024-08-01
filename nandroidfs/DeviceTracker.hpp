@@ -6,12 +6,14 @@
 
 #include "Nandroid.hpp"
 #include "dokan_no_winsock.h"
+#include "Logger.hpp"
 
 namespace nandroidfs {
 	// Keeps track of the connected ADB devices and attempts to mount a filesystem for each.
 	// Manages the Nandroid* instance for each ADB device.
 	class DeviceTracker {
 	public:
+		DeviceTracker(ContextLogger& parent_logger);
 		~DeviceTracker();
 
 		// Attempts to create a nandroid instance and mount a filesystem for the device with the provided serial number.
@@ -30,6 +32,8 @@ namespace nandroidfs {
 	private:
 		std::mutex device_man_mtx;
 		uint16_t current_port = 25989;
+
+		ContextLogger logger;
 
 		// Does not lock.
 		Nandroid* connect_to_device_internal(std::string serial);

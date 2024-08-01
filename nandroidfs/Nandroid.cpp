@@ -12,7 +12,11 @@ LPCWSTR AGENT_DEST_PATH = L"/data/local/tmp/nandroid-daemon";
 
 namespace nandroidfs 
 {
-	Nandroid::Nandroid(DeviceTracker& parent, std::string device_serial, uint16_t port_num) : parent(parent)
+	Nandroid::Nandroid(DeviceTracker& parent, std::string device_serial, uint16_t port_num, ContextLogger& parent_logger) :
+		parent(parent),
+		logger(parent_logger.replace_context(device_serial)),
+		agent_logger(logger.with_context("agent_std(out|err)")),
+		operations_logger(logger.with_context("operations"))
 	{
 		this->device_serial = device_serial;
 		wide_device_serial = wstring_from_string(device_serial);
@@ -21,35 +25,35 @@ namespace nandroidfs
 
 	Nandroid::~Nandroid() {
 		// Stop dokan calls first so that we can safely delete the connection.
-		std::cout << "Closing dokan instance" << std::endl;
+		logger.info("unmounting drive");
 		if (instance) {
 			DokanCloseHandle(instance);
 		}
 
 		if (connection) {
-			std::cout << "Dropping connection" << std::endl;
+			logger.debug("closing socket connection");
 			// Delete the connection immediately
 			// This will cause the agent to exit as it loses connection ...
 			delete connection;
 		}
 
 		{
-			std::cout << "Dropping ready lock" << std::endl;
+			logger.trace("dropping ready lock");
 			std::unique_lock lock(mtx_agent_ready);
 			bool notified = cv_agent_dead.wait_for(lock, std::chrono::milliseconds(2000), [this] { return this->agent_dead_notified; });
 			if (!notified) {
-				std::cerr << "Killing daemon as it did not exit when connection was killed." << std::endl;
+				logger.warn("killing daemon as it did not exit within the timeout when the connection was killed.");
 				try {
 					invoke_adb_with_serial(wide_device_serial, std::format(L"shell pkill nandroid-daemon"));
 				}
 				catch (const std::exception& ex)
 				{
-					std::cout << "Failed to kill daemon. Giving up: " << ex.what() << std::endl;
+					logger.error("failed to kill daemon, giving up: {}", ex.what());
 				}
 			}
 		}
 
-		std::cout << "Waiting for agent invoke thread to stop" << std::endl;
+		logger.trace("Waiting for agent invoke thread to stop");
 		this->agent_invoke_thread.join();
 	}
 
@@ -66,13 +70,16 @@ namespace nandroidfs
 	}
 
 	void Nandroid::begin() {
-		std::cout << "Pushing daemon, chmodding, forwarding port." << std::endl;
+		logger.debug("preparing for agent execution");
+		logger.trace("pushing agent to quest");
 		invoke_adb_with_serial(wide_device_serial, std::format(L"push {} {}", AGENT_PATH, AGENT_DEST_PATH));
+		logger.trace("chmodding agent");
 		invoke_adb_with_serial(wide_device_serial, std::format(L"shell chmod +x {}", AGENT_DEST_PATH));
+		logger.debug("forwarding device port {} to local port {}", NANDROID_PORT, port_num);
 		invoke_adb_with_serial(wide_device_serial, std::format(L"forward tcp:{} tcp:{}", port_num, NANDROID_PORT));
 
 		// Get the daemon running ready to initialise the connection
-		std::cout << "Invoking daemon" << std::endl;
+		logger.debug("executing agent, and waiting for it to be ready for requests");
 		this->agent_invoke_thread = std::thread(&Nandroid::invoke_daemon, this);
 
 		// Wait for the "ready" message before starting the connection.
@@ -85,7 +92,7 @@ namespace nandroidfs
 		}
 
 		// Initialise the TCP connection with the agent, which will carry out a brief handshake to ensure the connection is working.
-		this->connection = new Connection(std::string("localhost"), port_num);
+		this->connection = new Connection(std::string("localhost"), port_num, logger);
 		
 		// Now the connection is established, we can make an attempt to mount the drive.
 		mount_filesystem();
@@ -99,12 +106,12 @@ namespace nandroidfs
 			int exit_code = invoke_adb_capture_output(wide_device_serial,
 				std::format(L"shell .{}", AGENT_DEST_PATH),
 				std::bind(&Nandroid::handle_daemon_output, this, std::placeholders::_1, std::placeholders::_2));
-			std::cout << "Daemon exited with code " << exit_code << std::endl;
+			logger.debug("agent exited with code: {}", exit_code);
 		}
 		catch (const std::exception& ex)
 		{
-			std::cerr << "Error occured while invoking daemon - did ADB.exe suddenly get removed?" << std::endl;
-			std::cerr << ex.what() << std::endl;
+			logger.error("error occured while invoking the agent, did ADB.exe suddenly get removed?\n"
+			"{}", ex.what());
 		}
 
 		// Notify (the destructor) that the agent is no longer running (or failed to run.)
@@ -118,6 +125,7 @@ namespace nandroidfs
 
 	void Nandroid::mount_filesystem()
 	{
+		logger.info("mounting filesystem");
 		PDOKAN_OPTIONS dokan_options = new DOKAN_OPTIONS();
 		// Ensure the options aren't full of uninitialised garbage
 		ZeroMemory(dokan_options, sizeof(DOKAN_OPTIONS));
@@ -141,6 +149,7 @@ namespace nandroidfs
 			switch (status)
 			{
 				case DOKAN_SUCCESS:
+					logger.info("successfully mounted device to {}", static_cast<char>(mount_point[0]));
 					break;
 				case DOKAN_ERROR:
 					throw std::runtime_error("Unspecified dokan error");
@@ -156,13 +165,14 @@ namespace nandroidfs
 						throw std::runtime_error("No valid mount points found! All drive letters must be occupied");
 					}
 					mount_point[0] += 1;
+					logger.debug("trying next drive letter: {}", static_cast<char>(mount_point[0]));
 					break;
 				case DOKAN_MOUNT_POINT_ERROR:
 					throw std::runtime_error("Mount point was invalid");
 				case DOKAN_VERSION_ERROR:
 					throw std::runtime_error("Incompatible with installed version of dokan");
 				default:
-					std::cerr << "Unknown error occured, code: " << status << std::endl;
+					logger.error("unknown error occured, code: {}", status);
 					throw std::runtime_error("Unknown error occured");
 			}
 		}
@@ -183,7 +193,15 @@ namespace nandroidfs
 				cv_agent_ready.notify_one();
 			}
 
-			std::cout << "AGENT OUTPUT>> " << line << std::endl;
+			// Remove extra line endings since the logger adds its own line ending.
+			if (line.ends_with('\n')) {
+				line.pop_back();
+			}
+			if (line.ends_with('\r')) {
+				line.pop_back();
+			}
+
+			agent_logger.debug("{}", line);
 			last_newline_idx = next_newline_idx;
 		}
 
@@ -199,5 +217,9 @@ namespace nandroidfs
 		{
 			throw std::runtime_error("Attempting to get connection when not yet connected/mounted");
 		}
+	}
+
+	ContextLogger& Nandroid::get_operations_logger() {
+		return operations_logger;
 	}
 }

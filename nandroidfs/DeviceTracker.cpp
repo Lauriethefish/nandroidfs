@@ -4,6 +4,8 @@
 #include <iostream>
 
 namespace nandroidfs {
+	DeviceTracker::DeviceTracker(ContextLogger& parent_logger) : logger(parent_logger.with_context("DeviceTracker")) { }
+
 	std::unordered_set<std::string> DeviceTracker::list_authorized_adb_devices() {
 		std::string output = invoke_adb(L"devices");
 		std::unordered_set<std::string> devices_serial;
@@ -42,9 +44,7 @@ namespace nandroidfs {
 	DeviceTracker::~DeviceTracker() {
 		std::lock_guard lock(device_man_mtx);
 
-		std::cout << "Unmounting all devices" << std::endl;
 		for (auto& pair : instances) {
-			std::cout << "Unmouting " << pair.first << std::endl;
 			delete pair.second;
 		}
 	}
@@ -59,7 +59,7 @@ namespace nandroidfs {
 	}
 
 	Nandroid* DeviceTracker::connect_to_device_internal(std::string serial) {
-		Nandroid* instance = new Nandroid(*this, serial, current_port);
+		Nandroid* instance = new Nandroid(*this, serial, current_port, logger);
 		current_port++;
 		try
 		{
@@ -78,7 +78,6 @@ namespace nandroidfs {
 	void DeviceTracker::unmount_device(Nandroid* handle) {
 		std::lock_guard lock(device_man_mtx);
 
-		std::cout << "Device " << handle->get_device_serial() << " unmounting!" << std::endl;
 		instances.erase(handle->get_device_serial());
 		delete handle;
 	}
@@ -90,15 +89,16 @@ namespace nandroidfs {
 		for (std::string device_serial : devices) {
 			// Find devices that are not yet mounted and haven't failed to connect previously.
 			if (!instances.contains(device_serial) && !failed_to_connect.contains(device_serial)) {
-				std::cout << "Found new authorized device: " << device_serial << " (initializing connection)" << std::endl;
+				logger.info("found new authorized device, serial: {}, initializing connection", device_serial);
+
 				try
 				{
 					Nandroid* connection = connect_to_device_internal(device_serial);
 				}
 				catch (const std::exception& ex)
 				{
-					std::cerr << "Failed to connect: " << ex.what() << std::endl;
-					std::cerr << "Will not attempt to connect to this device again" << std::endl;
+					logger.error("failed to connect to device with serial {}: {}\n"
+						"reconnection will not happen unless manually invoked", device_serial, ex.what());
 					failed_to_connect.insert(device_serial);
 				}
 			}
@@ -111,7 +111,7 @@ namespace nandroidfs {
 		std::vector<std::string> to_remove;
 		for (auto& instance : instances) {
 			if (!devices.contains(instance.first)) {
-				std::cout << "Device " << instance.first << " disconnected :(" << std::endl;
+				logger.info("detected disconnected device {}", instance.first);
 				to_remove.push_back(instance.first);
 			}
 		}

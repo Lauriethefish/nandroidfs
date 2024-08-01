@@ -7,11 +7,13 @@
 #include <iostream>
 
 namespace nandroidfs {
-	Connection::Connection(std::string address, uint16_t port) 
+	Connection::Connection(std::string address, uint16_t port, ContextLogger& parent_logger) 
 		: writer(this, BUFFER_SIZE), 
 		reader(this, BUFFER_SIZE),
+		logger(parent_logger.with_context("Connection")),
 		stat_cache(STAT_SCAN_PERIOD, STAT_CACHE_PERIOD),
 		dir_list_cache(STAT_SCAN_PERIOD, STAT_CACHE_PERIOD) {
+		logger.debug("initialising agent connection");
 		WSADATA wsa_data;
 		throw_if_nonzero(WSAStartup(MAKEWORD(2, 2), &wsa_data));
 		try {
@@ -30,7 +32,7 @@ namespace nandroidfs {
 			// Iterate through the provided linked list of addresses until reaching a nullptr.
 			SOCKET connect_socket = INVALID_SOCKET;
 			for (struct addrinfo* ptr = result; ptr != nullptr; ptr = ptr->ai_next) {
-				std::cout << "Trying connection " << ptr->ai_family << " " << ptr->ai_socktype << " " << ptr->ai_protocol << std::endl;
+				logger.trace("trying address, family: {}, socktype: {}, protocol: {}", ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 				connect_socket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 				if (connect_socket == INVALID_SOCKET) {
 					freeaddrinfo(result);
@@ -54,6 +56,7 @@ namespace nandroidfs {
 			}
 
 			conn_sock = connect_socket;
+			logger.debug("connection successful, handshaking");
 			this->handshake();
 #ifdef _DEBUG
 			data_log_thread = std::thread(&Connection::data_log_entry_point, this);
@@ -73,7 +76,7 @@ namespace nandroidfs {
 
 		uint32_t received_data = reader.read_u32();
 		if (received_data == HANDSHAKE_DATA) {
-			std::cout << "Handshake succeeded" << std::endl;
+			logger.debug("handshake succeeded");
 		}
 		else
 		{
@@ -441,7 +444,7 @@ namespace nandroidfs {
 				int written_kb = data_written >> 10;
 				int read_kb = data_read >> 10;
 
-				std::cout << "Wrote " << written_kb << " read " << read_kb << " KiB" << std::endl;
+				logger.debug("wrote {}KiB, read {}KiB", written_kb, read_kb);
 				data_written = 0;
 				data_read = 0;
 			}
@@ -460,8 +463,8 @@ namespace nandroidfs {
 
 		data_log_thread.join();
 
-		std::cout << "Stat cache::" << stat_cache.get_cache_statistics() << std::endl;
-		std::cout << "Dir listing cache::" << dir_list_cache.get_cache_statistics() << std::endl;
+		logger.debug("stat cache statistics: {}", stat_cache.get_cache_statistics());
+		logger.debug("dir listing statistics: {}", dir_list_cache.get_cache_statistics());
 #endif
 
 		closesocket(conn_sock);

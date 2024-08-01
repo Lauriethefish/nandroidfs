@@ -7,8 +7,10 @@
 #include "Nandroid.hpp"
 #include "Adb.hpp"
 #include "DeviceTracker.hpp"
+#include "Logger.hpp"
 
 using namespace nandroidfs;
+
 
 bool shutdown_requested = false;
 BOOL WINAPI console_handler(DWORD signal) {
@@ -19,36 +21,40 @@ BOOL WINAPI console_handler(DWORD signal) {
 	return true;
 }
 
-void scan_for_devices() {
+void scan_for_devices(ContextLogger& logger) {
+
 	if (!SetConsoleCtrlHandler(console_handler, true)) {
-		std::cerr << "Warning: could not set Ctrl + C handler. Cannot gracefully exit" << std::endl;
+		logger.warn("could not set Ctrl + C handler, so cannot gracefully exit\n"
+			 "This may lead to connection failures on subsequent attempts");
 	}
 
-	DeviceTracker device_tracker;
-
+	logger.info("nandroidfs is periodically checking for new devices");
+	DeviceTracker device_tracker(logger);
 	while (!shutdown_requested) {
 		device_tracker.update_connected_devices();
+		// TODO, allow this to be customised?
 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	}
 
-	std::cout << "Shutting down nandroidfs" << std::endl;
+	logger.info("got Ctrl + C signal, shutting down active filesystems");
 }
 
 int main()
 {
+	ContextLogger logger(std::make_shared<StdOutSink>(), "main", LogLevel::Trace);
+
 	try
 	{
-		std::cout << "Starting up NandroidFS" << std::endl;
+		logger.info("nandroidfs is starting up");
 		DokanInit();
 
-		std::cout << "Checking for devices periodically" << std::endl;
-		scan_for_devices();
+		scan_for_devices(logger);
 	}
 	catch(std::exception& ex)
 	{
-		std::cerr << "NandroidFS crashed!" << std::endl << ex.what() << std::endl;
+		logger.error("nandroidfs crashed due to an unhandled error: {}", ex.what());
 	}
 
-	std::cout << "Goodbye!" << std::endl;
+	logger.info("goodbye!");
 	DokanShutdown();
 }

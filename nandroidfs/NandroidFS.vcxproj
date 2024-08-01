@@ -146,6 +146,7 @@
     <ClCompile Include="Connection.cpp" />
     <ClCompile Include="conversion.cpp" />
     <ClCompile Include="DeviceTracker.cpp" />
+    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Nandroid.cpp" />
     <ClCompile Include="operations.cpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="conversion.hpp" />
     <ClInclude Include="DeviceTracker.hpp" />
     <ClInclude Include="FileContext.hpp" />
+    <ClInclude Include="Logger.hpp" />
     <ClInclude Include="Nandroid.hpp" />
     <ClInclude Include="operations.hpp" />
     <ClInclude Include="Adb.hpp" />

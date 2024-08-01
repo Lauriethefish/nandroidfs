@@ -13,6 +13,7 @@
 #include "serialization.hpp"
 #include "responses.hpp"
 #include "TimedCache.hpp"
+#include "Logger.hpp"
 
 #define BUFFER_SIZE 4096
 
@@ -25,7 +26,7 @@ namespace nandroidfs {
 		// Creates a new instance of the Connection class
 		// This will establish a TCP connection to the server with the given address and port.
 		// It will also carry out a handshake to ensure the connection is working
-		Connection(std::string address, uint16_t port);
+		Connection(std::string address, uint16_t port, ContextLogger& parent_logger);
 		~Connection();
 
 		// Requests to stat a singular file.
@@ -72,6 +73,7 @@ namespace nandroidfs {
 		// If successful, this is saved to out_disk_stats
 		ResponseStatus req_get_disk_stats(DiskStats& out_disk_stats);
 	private:
+		ContextLogger logger;
 		SOCKET conn_sock;
 		DataWriter writer;
 		DataReader reader;
