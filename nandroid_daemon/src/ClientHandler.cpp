@@ -16,12 +16,16 @@
 #include <string>
 #include <stdio.h>
 
-#define DEFAULT_DIRECTORY_MODE 16888
-#define DEFAULT_FILE_MODE 33200
-// The path of a file within the filesystem to use when checking the available space on disk.
-#define FREE_SPACE_FS_PATH "/sdcard/"
-
 namespace nandroidfs {
+    // Buffer size for the DataWriter and DataReader.
+	const int BUFFER_SIZE = 8192;
+    const mode_t DEFAULT_FILE_MODE = 33200;
+    const mode_t DEFAULT_DIRECTORY_MODE = 16888;
+    // The path of a file within the filesystem to use when checking the available space on disk.
+    // i.e. the GetDiskStats RequestType will find the filesystem containing this file, and then
+    // check how much free space there is *within that filesystem*.
+    const char* FREE_SPACE_FS_PATH = "/sdcard/";
+
     ClientHandler::ClientHandler(int socket) : reader(DataReader(this, BUFFER_SIZE)), writer(DataWriter(this, BUFFER_SIZE)) {
         this->socket = socket;
 
@@ -52,7 +56,6 @@ namespace nandroidfs {
 
     ResponseStatus get_status_from_errno() {
         int err_num = errno;
-        //std::cout << "errno: " << err_num << strerror(err_num) << std::endl;
         switch(err_num) {
             case EACCES:
                 return ResponseStatus::AccessDenied;
@@ -94,7 +97,6 @@ namespace nandroidfs {
 
     void ClientHandler::handle_list_dir_stats() {
         std::string directory_path = reader.read_utf8_string();
-        //std::cout << "list_dir_stats: " << directory_path << std::endl;
 
         DIR* dir = opendir(directory_path.c_str());
         if(!dir) {
@@ -122,7 +124,6 @@ namespace nandroidfs {
                 writer.write_byte((uint8_t) status);
             }
 
-            //std::cout << "File stat for `" << full_entry_path << "`: " << stat.size << std::endl;
             current_entry = readdir(dir);
         }
 
@@ -130,7 +131,6 @@ namespace nandroidfs {
         writer.write_byte((uint8_t) ResponseStatus::NoMoreEntries);
 
         closedir(dir);
-        //std::cout << "Successfully listed dir" << std::endl;
     }
 
     void ClientHandler::handle_move_entry() {
@@ -189,26 +189,20 @@ namespace nandroidfs {
             creation_flags = O_RDWR; // Both read and write access.
         }
 
-        //std::cout << "open_handle: " << args.path << std::endl;
         switch(args.mode) {
             case OpenMode::CreateIfNotExist:
-                //std::cout << "create if not exist" << std::endl;
                 creation_flags |= O_CREAT;
                 break;
             case OpenMode::Truncate:
-                //std::cout << "trunacate" << std::endl;
                 creation_flags |= O_TRUNC;
                 break;
             case OpenMode::CreateOrTruncate:
-                //std::cout << "create or trunacate" << std::endl;
                 creation_flags |= O_CREAT | O_TRUNC;
                 break;
             case OpenMode::CreateAlways:
-                //std::cout << "create new" << std::endl;
                 creation_flags |= O_CREAT | O_EXCL;
                 break;
             case OpenMode::OpenOnly:
-                //std::cout << "just opening" << std::endl;
                 break;
                 // OpenOnly is the default option for opening a file - no need for additional flags.
         }
@@ -260,7 +254,6 @@ namespace nandroidfs {
                 break;
             }
         }
-        //std::cout << "Total read: " << total_read << " buff size: " << rw_buffer.size() << " requested: " << args.data_len << std::endl;
 
         writer.write_byte((uint8_t) ResponseStatus::Success);
         writer.write_u32(total_read);
@@ -359,7 +352,6 @@ namespace nandroidfs {
         if(faccessat(0, parent_dir_path->c_str(), R_OK | W_OK | X_OK, AT_EACCESS)) {
             return ResponseStatus::Success;
         }   else    {
-            std::cout << "Failed to remove dir entry" << std::endl;
             return get_status_from_errno();
         }
     }
@@ -425,7 +417,6 @@ namespace nandroidfs {
                 case RequestType::StatFile:
                 {
                     std::string file_path = reader.read_utf8_string();
-                    //std::cout << "stat_file: " << file_path << std::endl;
                     FileStat stat;
                     ResponseStatus status = stat_file(file_path.c_str(), &stat);
 
@@ -462,7 +453,6 @@ namespace nandroidfs {
                     break;
                 case RequestType::CloseHandle: {
                     int handle = reader.read_u32();
-                    //std::cout << "closing: " << handle << std::endl;
                     close(handle);
                     writer.write_byte((uint8_t) ResponseStatus::Success);
                     break;

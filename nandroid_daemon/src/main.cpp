@@ -27,7 +27,7 @@ void handle_client(int client_sock) {
 void start_server() {
 	sockaddr_in addr;
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(NANDROID_PORT);
+	addr.sin_port = htons(AGENT_PORT);
 	addr.sin_addr.s_addr = inet_addr("0.0.0.0");
 	server_sock = throw_unless(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP));
 	try
@@ -36,7 +36,7 @@ void start_server() {
 		throw_unless(listen(server_sock, 1) == -1);
 
 		std::cout << "Binded successfully to port, awaiting connection" << std::endl;
-		std::cout << NANDROID_READY << std::endl;
+		std::cout << AGENT_READY_MSG << std::endl;
 
 		// Keep accepting requests continuously
 		int client_sock = throw_unless(accept(server_sock, nullptr, nullptr));

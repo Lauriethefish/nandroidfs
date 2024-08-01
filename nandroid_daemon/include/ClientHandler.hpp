@@ -3,10 +3,7 @@
 #include "serialization.hpp"
 #include <vector>
 
-#define BUFFER_SIZE 4096
-
 namespace nandroidfs {
-
     class ClientHandler : Readable, Writable {
     private:
         int socket;

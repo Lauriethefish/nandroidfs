@@ -7,8 +7,11 @@
 #include <iostream>
 
 namespace nandroidfs {
+	// Buffer size for the DataWriter and DataReader.
+	const int BUFFER_SIZE = 8192;
+
 	Connection::Connection(std::string address, uint16_t port, ContextLogger& parent_logger) 
-		: writer(this, BUFFER_SIZE), 
+		: writer(this, BUFFER_SIZE),
 		reader(this, BUFFER_SIZE),
 		logger(parent_logger.with_context("Connection")),
 		stat_cache(STAT_SCAN_PERIOD, STAT_CACHE_PERIOD),

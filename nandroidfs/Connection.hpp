@@ -15,8 +15,6 @@
 #include "TimedCache.hpp"
 #include "Logger.hpp"
 
-#define BUFFER_SIZE 4096
-
 namespace nandroidfs {
 	const ms_duration STAT_CACHE_PERIOD = std::chrono::milliseconds(200);
 	const ms_duration STAT_SCAN_PERIOD = std::chrono::milliseconds(5000);

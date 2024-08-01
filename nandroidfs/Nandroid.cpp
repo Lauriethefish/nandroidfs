@@ -75,8 +75,8 @@ namespace nandroidfs
 		invoke_adb_with_serial(wide_device_serial, std::format(L"push {} {}", AGENT_PATH, AGENT_DEST_PATH));
 		logger.trace("chmodding agent");
 		invoke_adb_with_serial(wide_device_serial, std::format(L"shell chmod +x {}", AGENT_DEST_PATH));
-		logger.debug("forwarding device port {} to local port {}", NANDROID_PORT, port_num);
-		invoke_adb_with_serial(wide_device_serial, std::format(L"forward tcp:{} tcp:{}", port_num, NANDROID_PORT));
+		logger.debug("forwarding device port {} to local port {}", AGENT_PORT, port_num);
+		invoke_adb_with_serial(wide_device_serial, std::format(L"forward tcp:{} tcp:{}", port_num, AGENT_PORT));
 
 		// Get the daemon running ready to initialise the connection
 		logger.debug("executing agent, and waiting for it to be ready for requests");
@@ -185,7 +185,7 @@ namespace nandroidfs
 		// Locate any new-lines within the buffer.
 		while ((next_newline_idx = agent_output_buffer.find('\n', last_newline_idx + 1)) != std::string::npos) {
 			std::string line = agent_output_buffer.substr(last_newline_idx + 1, next_newline_idx);
-			if (line.starts_with(NANDROID_READY)) {
+			if (line.starts_with(AGENT_READY_MSG)) {
 				std::unique_lock lock(mtx_agent_ready);
 				agent_ready = true;
 				agent_ready_notified = true;

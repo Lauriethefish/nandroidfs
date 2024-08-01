@@ -70,6 +70,7 @@ namespace nandroidfs {
 		// This means that the ReadFile call will EOF when the child process exits.
 
 		// Read data from the process until EOF.
+		const int STDOUT_READ_BUF_SIZE = 4096;
 		CHAR* buffer = new CHAR[STDOUT_READ_BUF_SIZE];
 		DWORD bytes_read;
 

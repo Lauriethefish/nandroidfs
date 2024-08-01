@@ -3,14 +3,14 @@
 #include <string>
 #include "serialization.hpp"
 
-#define NANDROID_PORT 25818
-#define NANDROID_READY "NANDROID_READY_FOR_CONNECTION"
-
 // Requests are sent as a RequestType (1 byte), 
 // followed by the request body.
 
 namespace nandroidfs 
 {
+    inline const uint16_t AGENT_PORT = 28933;
+    inline const char* AGENT_READY_MSG = "NANDROID_READY_FOR_CONNECTION";
+
     typedef uint32_t FILE_HANDLE;
 
     enum class RequestType : uint8_t
