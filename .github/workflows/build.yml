@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies
       run: powershell ./install_deps.ps1
     - name: Build agent
-      run: powershell ./nandroid_daemon/build.ps1
+      run: cd nandroid_daemon && powershell ./build.ps1
     - name: Build windows app
       run: msbuild /p:Configuration=Release
     - name: Standalone upload
