@@ -12,6 +12,11 @@ namespace nandroidfs {
 	TrayMenuManager::TrayMenuManager(HINSTANCE hInstance, std::function<void()> quit_callback) :
 		quit_callback(quit_callback),
 		hInstance(hInstance) {
+		TrayMenuManager* current_inst = nullptr;
+		TrayMenuManager::inst.compare_exchange_strong(current_inst, this);
+		if (current_inst) {
+			throw std::runtime_error("Attemted to create multiple instances of TrayMenuManager");
+		}
 	}
 
 	TrayMenuManager::~TrayMenuManager() {
@@ -21,6 +26,7 @@ namespace nandroidfs {
 		}
 
 		event_loop_thread.join();
+		TrayMenuManager::inst.store(nullptr); // Allow another instance to be creatred.
 	}
 
 	void TrayMenuManager::release_resources() {
@@ -96,10 +102,6 @@ namespace nandroidfs {
 		// Create a message-only window that handles the click events on the tray menu.
 		tray_icon_window = CreateWindowEx(0, window_class_name, NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, hInstance, NULL);
 		if (tray_icon_window == 0) {
-			return false;
-		}
-
-		if (!SetWindowLongPtr(tray_icon_window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this)) == 0) {
 			return false;
 		}
 
@@ -193,12 +195,12 @@ namespace nandroidfs {
 		return success;
 	}
 
-	bool TrayMenuManager::set_console_enabled(bool enabled) {
-		if (enabled == console_enabled) {
+	bool TrayMenuManager::set_console_enabled(bool new_enabled) {
+		if (new_enabled == console_enabled) {
 			return true;
 		}
 
-		if(enabled) {
+		if(new_enabled) {
 			// Allocate and set up the console if it is the first time we are enabling the console.
 			if (!alloced_console) {
 				if (!AllocConsole()) {
@@ -206,7 +208,6 @@ namespace nandroidfs {
 				}
 
 				// Add context to the console window.
-				SetWindowLongPtr(GetConsoleWindow(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 				SetConsoleCtrlHandler(&TrayMenuManager::console_handler, true);
 
 				// Doesn't really matter if this succeeds, so ignore the error.
@@ -222,19 +223,17 @@ namespace nandroidfs {
 
 				alloced_console = true;
 			}
-			else if (!ShowWindow(GetConsoleWindow(), SW_SHOW)) {
-				return false;
+			else {
+				ShowWindow(GetConsoleWindow(), SW_SHOW);
 			}
 		}
 		else if(alloced_console)
 		{
 			// Hide the current console window if allocated
-			if (!ShowWindow(GetConsoleWindow(), SW_HIDE)) {
-				return false;
-			}
+			ShowWindow(GetConsoleWindow(), SW_HIDE);
 		}
 
-		console_enabled = enabled;
+		console_enabled = new_enabled;
 		update_rightclick_menu(); // Check/uncheck the "enable console" button.
 		return true;
 	}
@@ -251,8 +250,9 @@ namespace nandroidfs {
 
 	LRESULT CALLBACK TrayMenuManager::tray_window_proc(HWND window_handle, UINT msg, WPARAM w_param, LPARAM l_param) {
 		// Get the context from the window.
-		auto* inst = reinterpret_cast<TrayMenuManager*>(GetWindowLongPtr(window_handle, GWLP_USERDATA));
-
+		// A separate thread is created for each TrayMenuManager instance, so this thread_local
+		// variable is guaranteed to point to the correct instance.
+		auto* inst = TrayMenuManager::inst.load();
 		switch (msg) {
 		case WM_CLOSE:
 			inst->release_resources();
@@ -300,8 +300,7 @@ namespace nandroidfs {
 	BOOL WINAPI TrayMenuManager::console_handler(DWORD signal) {
 		if (signal == CTRL_C_EVENT) {
 			// Trigger the quit callback if console Ctrl + C is pressed.
-			auto* inst = reinterpret_cast<TrayMenuManager*>(GetWindowLongPtr(GetConsoleWindow(), GWLP_USERDATA));
-			inst->quit_callback();
+			TrayMenuManager::inst.load()->quit_callback();
 		}
 
 		return true;

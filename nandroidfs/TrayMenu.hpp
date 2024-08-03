@@ -12,6 +12,7 @@ namespace nandroidfs {
 	// when the user requests.
 	// Takes in a callback to trigger the main thread to quit nandroid when desired.
 	// This callback will also be triggered if the user presses Ctrl + C in the console (if it is enabled.)
+	// This class is a singleton, creating more than one instance will result in an error.
 	class TrayMenuManager {
 	public:
 		// Creates a new instance of the class but does NOT yet create the tray menu.
@@ -51,6 +52,10 @@ namespace nandroidfs {
 		// Returns whether it succeeded
 		bool initialise_internal();
 
+		// The `this` pointer for the current instance.
+		// Necessary as the console Ctrl + C handler callback needs the current instance
+		// in order to invoke the quit callback.
+		static inline std::atomic<TrayMenuManager*> inst = nullptr;
 		// Whether `initialise` has yet been called.
 		bool initialised = false;
 		// Whether the initialisation process has succeeded.
@@ -67,7 +72,7 @@ namespace nandroidfs {
 		std::function<void()> quit_callback;
 
 		static inline const LPCTSTR window_class_name = L"NandroidTrayWnd";
-		bool window_class_registered;
+		bool window_class_registered = false;
 
 		HINSTANCE hInstance;
 		HWND tray_icon_window = NULL;
