@@ -13,25 +13,11 @@
 using namespace nandroidfs;
 
 
-bool shutdown_requested = false;
-BOOL WINAPI console_handler(DWORD signal) {
-	if (signal == CTRL_C_EVENT) {
-		shutdown_requested = true;
-	}
-	
-	return true;
-}
-
+std::atomic_bool shutdown_requested = false;
 void scan_for_devices(ContextLogger& logger) {
-
-	if (!SetConsoleCtrlHandler(console_handler, true)) {
-		logger.warn("could not set Ctrl + C handler, so cannot gracefully exit\n"
-			 "This may lead to connection failures on subsequent attempts");
-	}
-
 	logger.info("nandroidfs is periodically checking for new devices");
 	DeviceTracker device_tracker(logger);
-	while (!shutdown_requested) {
+	while (!shutdown_requested.load()) {
 		device_tracker.update_connected_devices();
 		// TODO, allow this to be customised?
 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
@@ -50,7 +36,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	std::ios_base::sync_with_stdio(false); // Speed up logging by decoupling C and C++ IO.
 
 	TrayMenuManager tray_menu(hInstance, [&]() {
-		shutdown_requested = true;
+		shutdown_requested.store(true);
 	});
 
 	if (!tray_menu.initialise()) {

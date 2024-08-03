@@ -11,6 +11,7 @@ namespace nandroidfs {
 	// Manages the nandroid tray menu and handles enabling/disabling the debug console
 	// when the user requests.
 	// Takes in a callback to trigger the main thread to quit nandroid when desired.
+	// This callback will also be triggered if the user presses Ctrl + C in the console (if it is enabled.)
 	class TrayMenuManager {
 	public:
 		// Creates a new instance of the class but does NOT yet create the tray menu.
@@ -42,6 +43,8 @@ namespace nandroidfs {
 		void event_loop();
 		// Called by windows whenever a message needs to be processed on the window.
 		static LRESULT CALLBACK tray_window_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		// Handles the console Ctrl + C event.
+		static BOOL WINAPI console_handler(DWORD signal);
 
 		void window_thread_entry_point();
 		// Intialises the tray menu, on the current thread.

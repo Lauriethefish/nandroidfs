@@ -204,6 +204,11 @@ namespace nandroidfs {
 				if (!AllocConsole()) {
 					return false;
 				}
+
+				// Add context to the console window.
+				SetWindowLongPtr(GetConsoleWindow(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+				SetConsoleCtrlHandler(&TrayMenuManager::console_handler, true);
+
 				// Doesn't really matter if this succeeds, so ignore the error.
 				SetConsoleTitle(L"NandroidFS Console");
 				
@@ -290,5 +295,15 @@ namespace nandroidfs {
 		}
 
 		return DefWindowProc(window_handle, msg, w_param, l_param);
+	}
+
+	BOOL WINAPI TrayMenuManager::console_handler(DWORD signal) {
+		if (signal == CTRL_C_EVENT) {
+			// Trigger the quit callback if console Ctrl + C is pressed.
+			auto* inst = reinterpret_cast<TrayMenuManager*>(GetWindowLongPtr(GetConsoleWindow(), GWLP_USERDATA));
+			inst->quit_callback();
+		}
+
+		return true;
 	}
 }
