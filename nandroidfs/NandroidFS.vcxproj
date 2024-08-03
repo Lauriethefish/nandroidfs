@@ -114,7 +114,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>.\dependencies\lib\dokan2.lib;Ws2_32.lib;Mswsock.lib;AdvApi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -131,7 +131,7 @@
       <AdditionalIncludeDirectories>.\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -151,6 +151,7 @@
     <ClCompile Include="Nandroid.cpp" />
     <ClCompile Include="operations.cpp" />
     <ClCompile Include="Adb.cpp" />
+    <ClCompile Include="TrayMenu.cpp" />
     <ClCompile Include="WinSockException.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -166,7 +167,11 @@
     <ClInclude Include="Nandroid.hpp" />
     <ClInclude Include="operations.hpp" />
     <ClInclude Include="Adb.hpp" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="resource1.h" />
+    <ClInclude Include="resource2.h" />
     <ClInclude Include="TimedCache.hpp" />
+    <ClInclude Include="TrayMenu.hpp" />
     <ClInclude Include="WinSockException.hpp" />
     <ClInclude Include="dokan_no_winsock.h" />
   </ItemGroup>
@@ -178,6 +183,12 @@
     <Content Include="..\nandroid_daemon\libs\arm64-v8a\nandroid-daemon">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NandroidFS.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="nandroid_logo.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

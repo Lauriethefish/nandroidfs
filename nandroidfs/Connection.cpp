@@ -466,8 +466,9 @@ namespace nandroidfs {
 
 		data_log_thread.join();
 
-		logger.debug("stat cache statistics: {}", stat_cache.get_cache_statistics());
-		logger.debug("dir listing statistics: {}", dir_list_cache.get_cache_statistics());
+		// TODO: fix with new logger
+		//logger.debug("stat cache statistics: {}", stat_cache.get_cache_statistics());
+		//logger.debug("dir listing statistics: {}", dir_list_cache.get_cache_statistics());
 #endif
 
 		closesocket(conn_sock);

@@ -8,6 +8,7 @@
 #include "Adb.hpp"
 #include "DeviceTracker.hpp"
 #include "Logger.hpp"
+#include "TrayMenu.hpp"
 
 using namespace nandroidfs;
 
@@ -39,9 +40,22 @@ void scan_for_devices(ContextLogger& logger) {
 	logger.info("got Ctrl + C signal, shutting down active filesystems");
 }
 
-int main()
+
+int CALLBACK WinMain(HINSTANCE hInstance,
+	HINSTANCE hPrevInstance,
+	LPSTR lpCmdLine,
+	int cCmdShow)
 {
 	ContextLogger logger(std::make_shared<StdOutSink>(), "main", LogLevel::Trace);
+	std::ios_base::sync_with_stdio(false); // Speed up logging by decoupling C and C++ IO.
+
+	TrayMenuManager tray_menu(hInstance, [&]() {
+		shutdown_requested = true;
+	});
+
+	if (!tray_menu.initialise()) {
+		logger.error("failed to create tray menu");
+	}
 
 	try
 	{
@@ -49,12 +63,15 @@ int main()
 		DokanInit();
 
 		scan_for_devices(logger);
+
+		logger.info("goodbye!");
+		DokanShutdown();
+		return 0;
 	}
 	catch(std::exception& ex)
 	{
 		logger.error("nandroidfs crashed due to an unhandled error: {}", ex.what());
+		DokanShutdown();
+		return 1;
 	}
-
-	logger.info("goodbye!");
-	DokanShutdown();
 }

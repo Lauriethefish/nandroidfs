@@ -30,6 +30,8 @@ namespace nandroidfs {
 		start_info.cb = sizeof(STARTUPINFO);
 		start_info.hStdError = child_stdout_write;
 		start_info.hStdOutput = child_stdout_write;
+		start_info.dwFlags = STARTF_USESHOWWINDOW;
+		start_info.wShowWindow = SW_HIDE;
 		// ...TODO: Allow supplying a source for stdin?
 
 		// Create a clone of the arguments that can be written to, to avoid an access violation.

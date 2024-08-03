@@ -8,7 +8,7 @@
         ],
         "includePath": [
           "${workspaceFolder}/Nandroid_daemon/include/**",
-          "C:/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/**",
+          "C:/ndk/android-ndk-r22b/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/**",
           "${workspaceFolder}/Nandroid_shared/**"
         ],
         "name": "Quest",
