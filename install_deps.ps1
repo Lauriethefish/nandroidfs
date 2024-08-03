@@ -21,6 +21,7 @@ $DokanBinariesUrl = "https://github.com/dokan-dev/dokany/releases/download/v2.1.
 # Android NDK r27
 $AndroidNdkUrl = "https://dl.google.com/android/repository/android-ndk-r27-windows.zip"
 
+New-Item -Path $DependenciesTemp -ItemType Directory | Out-Null
 
 Write-Output "Downloading dokan source and binaries"
 Invoke-WebRequest $DokanSourceUrl -OutFile $DokanSourceTemp
