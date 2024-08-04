@@ -50,10 +50,7 @@ namespace nandroidfs {
 
 		// The same as the above method but this method will not add to the context, but simply replace all existing context with what's given.
 		ContextLogger replace_context(std::string context, std::optional<LogLevel> new_min_level = std::nullopt);
-// TODO: Update MSVC then remove this because it's not guaranteed to work, this internal name may change.
-#ifdef _MSC_VER
-#define format_string _Fmt_string
-#endif
+
 		template <typename ...Args> void log(LogLevel level, std::format_string<Args...> fmt_str, Args&&... args) {
 			if ((int)level >= (int)min_level) {
 				std::string log_msg = std::format(fmt_str, std::forward<Args>(args)...);
