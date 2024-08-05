@@ -6,6 +6,7 @@
 #include <shared_mutex>
 #include <string>
 #include <iostream>
+#include <format>
 
 namespace nandroidfs {
 	typedef std::chrono::milliseconds ms_duration;
@@ -15,11 +16,6 @@ namespace nandroidfs {
 		size_t total_cache_hits;
 		size_t total_data_fetched;
 	};
-
-	inline std::ostream& operator << (std::ostream& os, const CacheStatistics& stats) {
-		return (os << "Total hits: " << stats.total_cache_hits << ", total requests: " << stats.total_data_fetched << std::endl
-			<< "Hit rate: " << (100.0 * stats.total_cache_hits / stats.total_data_fetched) << std::endl);
-	}
 
 	// A cache for generic data used to reduce requests being send to the nandroid daemon.
 	// This class is thread safe.
@@ -134,3 +130,17 @@ namespace nandroidfs {
 		}
 	};
 }
+
+template <>
+struct std::formatter<nandroidfs::CacheStatistics> {
+	constexpr auto parse(std::format_parse_context& ctx) {
+		return ctx.begin();
+	}
+
+	auto format(const nandroidfs::CacheStatistics& stats, std::format_context& ctx) const {
+		return std::format_to(ctx.out(), "Total hits: {}, total requests: {}, hit rate: {:.2f}%",
+			stats.total_cache_hits,
+			stats.total_data_fetched,
+			100.0 * stats.total_cache_hits / stats.total_data_fetched);
+	}
+};
