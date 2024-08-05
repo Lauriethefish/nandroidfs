@@ -1,6 +1,8 @@
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
+#include <mutex>
+#include <condition_variable>
 
 #include "dokan_no_winsock.h"
 #include "Connection.hpp"
@@ -12,15 +14,28 @@
 
 using namespace nandroidfs;
 
+// Maximum number of milliseconds between each call to `adb devices`.
+const int DEVICE_CHECK_INTERVAL_MS = 1000;
 
-std::atomic_bool shutdown_requested = false;
+// Thread synchronisation for notifying the main thread to shut down the app 
+// from the system tray or Ctrl + C
+std::mutex shutdown_mutex;
+std::condition_variable shutdown_cond_var;
+bool shutdown_requested = false;
+
 void scan_for_devices(ContextLogger& logger) {
 	logger.info("nandroidfs is periodically checking for new devices");
 	DeviceTracker device_tracker(logger);
-	while (!shutdown_requested.load()) {
+
+	std::unique_lock lock(shutdown_mutex);
+	while (!shutdown_requested) {
+		lock.unlock();
 		device_tracker.update_connected_devices();
-		// TODO, allow this to be customised?
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		lock.lock();
+
+		// Wait for a maximum of DEVICE_CHECK_INTERVAL_MS. The actual wait time may be shorter due to spurious wakeups
+		shutdown_cond_var.wait_for(lock, std::chrono::milliseconds(DEVICE_CHECK_INTERVAL_MS));
+		// ...wait_for unlocks then relocks the unique_lock.
 	}
 
 	logger.info("got Ctrl + C signal, shutting down active filesystems");
@@ -61,7 +76,9 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	std::ios_base::sync_with_stdio(false); // Speed up logging by decoupling C and C++ IO.
 
 	TrayMenuManager tray_menu(hInstance, [&]() {
-		shutdown_requested.store(true);
+		std::unique_lock lock(shutdown_mutex);
+		shutdown_requested = true;
+		shutdown_cond_var.notify_one();
 	});
 
 	if (!tray_menu.initialise()) {
