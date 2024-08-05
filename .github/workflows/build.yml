@@ -19,8 +19,15 @@ jobs:
       run: cd nandroid_daemon && powershell ./build.ps1
     - name: Build windows app
       run: msbuild /p:Configuration=Release
+    - name: Build installer
+      run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /f ./installer/installer.iss'
     - name: Standalone upload
       uses: actions/upload-artifact@v4
       with:
         name: standalone
         path: ./x64/Release/**
+    - name: Installer upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: installer
+        path: ./installer/nandroidfs_installer.exe
