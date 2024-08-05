@@ -7,6 +7,8 @@ $DokanSourceTemp = "$DependenciesTemp/dokan_source.zip"
 $DokanBinariesTemp = "$DependenciesTemp/dokan_binaries.zip"
 $DokanSourceExtract = "$DependenciesTemp/dokan_src"
 $DokanBinariesExtract = "$DependenciesTemp/dokan_binaries"
+$InnoUrl = "https://jrsoftware.org/download.php/is.exe?site=2"
+$InnoTemp = "$DependenciesTemp/innosetupsetup.exe"
 $NdkTemp = "$DependenciesTemp/android_ndk.zip"
 $NdkExtractTemp = "$DependenciesTemp/android_ndk"
 
@@ -68,4 +70,13 @@ if($null -eq $env:ANDROID_NDK_HOME) {
     # Locate the android-ndk-rXXX folder within the extracted ZIP archive.
     # Set ANDROID_NDK_HOME so that build.ps1 will work correctly.
     $env:ANDROID_NDK_HOME = (Get-ChildItem -Path $NdkExtractTemp -Directory)[0].FullName
+}
+
+$InnoSetupHome = "C:\Program Files (x86)\Inno Setup 6"
+if(-not (Test-Path -Path $InnoSetupHome)) {
+    Write-Output "Downloading inno setup"
+    Invoke-WebRequest $InnoUrl -OutFile $InnoTemp
+    Write-Output "Installing inno setup"
+    & $InnoTemp /VERYSILENT /NORESTART /ALLUSERS
+    Remove-Item $InnoTemp
 }
