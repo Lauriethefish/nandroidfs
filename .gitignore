@@ -5,3 +5,5 @@ x64/
 Nandroid_daemon/libs/
 Nandroid_daemon/obj/
 dependencies/
+installer/*.msi
+installer/*.exe

@@ -1,0 +1,4 @@
+NandroidFS is now installed on your computer. Plug in an Android device with USB debugging enabled,
+and you should be able to see it as a drive on your computer.
+
+If you wish to check NandroidFS is working, debug an issue, or quit the app, you can use the system tray icon on the taskbar.
