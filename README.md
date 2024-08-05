@@ -10,14 +10,14 @@ Android devices can already be accessed in Windows Explorer using the [Media Tra
 
 MTP only allows downloading/uploading a whole file, and has no support for editing files in place/streaming data.
 
-## Licensing
-NandroidFS is available under the terms of the GNU General Public License, version 3. The full text can be found [here](./LICENSE).
-
 ## How to use
 1. Install [dokan library v2.1.0](https://github.com/dokan-dev/dokany/releases/tag/v2.1.0.1000)
 2. Download and run the latest NandroidFS installer from [github actions](https://github.com/Lauriethefish/nandroidfs/actions)
 3. NandroidFS will run once the installer exits and on startup. 
 4. Plug in an Android device and allow USB debugging. NandroidFS will mount it to the next available drive letter.
+
+## Licensing
+NandroidFS is available under the terms of the GNU General Public License, version 3. The full text can be found [here](./LICENSE).
 
 ## Development
 ### Project structure
@@ -29,7 +29,8 @@ NandroidFS has two parts:
 #### Requirements
 To manually install:
 - Visual Studio 2022 with the `Desktop development with C++` package installed.
-- Dokan driver v2.1.0 installed.
+- Dokan driver v2.1.0 installed as is required to run the app.
+
 Installed by script, run `./install_deps.ps1` to install any of these dependencies that are missing:
 - Dokan headers and libs in `nandroidfs/dependencies`
 - Android NDK r27 with path set on `ANDROID_NDK_HOME`.
