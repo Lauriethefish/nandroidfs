@@ -65,9 +65,6 @@
     <ClInclude Include="..\Nandroid_shared\requests.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Nandroid_shared\responses.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Nandroid_shared\serialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -95,26 +92,26 @@
     <ClInclude Include="DeviceTracker.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TimedCache.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\nandroid_shared\path_utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Logger.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="TrayMenu.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource1.h">
+    <ClInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TimedCache.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\nandroid_shared\responses.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TrayMenu.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Resource Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
