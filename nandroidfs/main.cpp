@@ -20,7 +20,7 @@ void scan_for_devices(ContextLogger& logger) {
 	while (!shutdown_requested.load()) {
 		device_tracker.update_connected_devices();
 		// TODO, allow this to be customised?
-		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 
 	logger.info("got Ctrl + C signal, shutting down active filesystems");
