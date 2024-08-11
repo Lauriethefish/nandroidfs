@@ -98,8 +98,10 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	}
 	catch(std::exception& ex)
 	{
-		logger.error("nandroidfs crashed due to an unhandled error: {}", ex.what());
 		DokanShutdown();
+
+		logger.error("nandroidfs crashed due to an unhandled error: {}", ex.what());
+		MessageBoxA(NULL, ex.what(), "NandroidFS crashed", MB_ICONERROR | MB_OK);
 		return 1;
 	}
 }
