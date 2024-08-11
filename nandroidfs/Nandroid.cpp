@@ -79,7 +79,7 @@ namespace nandroidfs
 			throw std::runtime_error("Failed to get agent path");
 		}
 
-		invoke_adb_with_serial(wide_device_serial, std::format(L"push {} {}", agent_path, AGENT_DEST_PATH));
+		invoke_adb_with_serial(wide_device_serial, std::format(L"push \"{}\" {}", agent_path, AGENT_DEST_PATH));
 		logger.trace("chmodding agent");
 		invoke_adb_with_serial(wide_device_serial, std::format(L"shell chmod +x {}", AGENT_DEST_PATH));
 		logger.debug("forwarding device port {} to local port {}", AGENT_PORT, port_num);
