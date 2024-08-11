@@ -40,7 +40,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Code]
 procedure CheckDokanPresent();
 begin
-    if not DirExists(ExpandConstant('{commonpf}\Dokan\DokanLibrary-2.1.0')) then
+    ; Check both dokan paths, both with/without a space
+    if (not DirExists(ExpandConstant('{commonpf}\Dokan\Dokan Library-2.1.0'))) and (not DirExists(ExpandConstant('{commonpf}\Dokan\DokanLibrary-2.1.0'))) then
         MsgBox('Setup has detected that the dokan library v2.1.0 is not present. Please install dokany v2.1.0 before you attempt to use NandroidFS.', mbInformation, MB_OK);
     end;
 end.
