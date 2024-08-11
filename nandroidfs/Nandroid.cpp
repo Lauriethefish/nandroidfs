@@ -3,11 +3,12 @@
 #include "Adb.hpp"
 #include "conversion.hpp"
 #include "DeviceTracker.hpp"
+#include "win_path_util.hpp"
 #include <format>
 #include <stdexcept>
 #include <iostream>
 
-LPCWSTR AGENT_PATH = L"nandroid-daemon";
+LPCWSTR AGENT_REL_PATH = L"nandroid-daemon";
 LPCWSTR AGENT_DEST_PATH = L"/data/local/tmp/nandroid-daemon";
 
 namespace nandroidfs 
@@ -72,7 +73,13 @@ namespace nandroidfs
 	void Nandroid::begin() {
 		logger.debug("preparing for agent execution");
 		logger.trace("pushing agent to quest");
-		invoke_adb_with_serial(wide_device_serial, std::format(L"push {} {}", AGENT_PATH, AGENT_DEST_PATH));
+
+		LPWSTR agent_path = win_path_util::get_abs_path_from_rel_to_exe(AGENT_REL_PATH);
+		if (!agent_path) {
+			throw std::runtime_error("Failed to get agent path");
+		}
+
+		invoke_adb_with_serial(wide_device_serial, std::format(L"push {} {}", agent_path, AGENT_DEST_PATH));
 		logger.trace("chmodding agent");
 		invoke_adb_with_serial(wide_device_serial, std::format(L"shell chmod +x {}", AGENT_DEST_PATH));
 		logger.debug("forwarding device port {} to local port {}", AGENT_PORT, port_num);

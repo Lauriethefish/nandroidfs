@@ -116,7 +116,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>.\dependencies\lib\dokan2.lib;Ws2_32.lib;Mswsock.lib;AdvApi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>.\dependencies\lib\dokan2.lib;Ws2_32.lib;Mswsock.lib;AdvApi32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -153,6 +153,7 @@
     <ClCompile Include="Adb.cpp" />
     <ClCompile Include="TrayMenu.cpp" />
     <ClCompile Include="WinSockException.cpp" />
+    <ClCompile Include="win_path_util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\nandroid_shared\path_utils.hpp" />
@@ -173,6 +174,7 @@
     <ClInclude Include="TrayMenu.hpp" />
     <ClInclude Include="WinSockException.hpp" />
     <ClInclude Include="dokan_no_winsock.h" />
+    <ClInclude Include="win_path_util.hpp" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\nandroid_daemon\libs\arm64-v8a\nandroid-daemon">

@@ -1,4 +1,5 @@
 #include "Adb.hpp"
+#include "win_path_util.hpp"
 #include <format>
 #include <stdexcept>
 #include <tchar.h>
@@ -21,7 +22,14 @@ namespace nandroidfs {
 		}
 	}
 
-	PROCESS_INFORMATION create_process(HANDLE child_stdout_write, LPCWSTR command_line, DWORD flags) {
+	// Allocates a new string and copies `orig` into it.
+	LPWSTR non_constify_string(LPCWSTR orig) {
+		LPWSTR nonconst = new WCHAR[lstrlenW(orig) + 1]; // + 1 for the terminating NULL
+		lstrcpyW(nonconst, orig);
+		return nonconst;
+	}
+
+	PROCESS_INFORMATION create_process_pipe_output(HANDLE child_stdout_write, LPCWSTR command_line, DWORD flags) {
 		// Set options needed to start the process.
 		PROCESS_INFORMATION process_info;
 		STARTUPINFO start_info;
@@ -35,11 +43,7 @@ namespace nandroidfs {
 		// ...TODO: Allow supplying a source for stdin?
 
 		// Create a clone of the arguments that can be written to, to avoid an access violation.
-		int args_len = lstrlenW(command_line);
-		LPWSTR nonconst_args = new WCHAR[args_len + 1];
-		lstrcpyW(nonconst_args, command_line);
-
-
+		LPWSTR nonconst_args = non_constify_string(command_line);
 		start_info.dwFlags |= STARTF_USESTDHANDLES;
 		bool success = CreateProcess(nullptr,
 			nonconst_args,
@@ -67,7 +71,7 @@ namespace nandroidfs {
 		create_stdouterr_pipes(&child_stdout_write, &child_stdout_read);
 
 		// Now ready to actually create the process.
-		PROCESS_INFORMATION process_info = create_process(child_stdout_write, command_line, flags);
+		PROCESS_INFORMATION process_info = create_process_pipe_output(child_stdout_write, command_line, flags);
 		CloseHandle(child_stdout_write); // Close the write handle to the child's stdout FROM THIS PROCESS
 		// This means that the ReadFile call will EOF when the child process exits.
 
@@ -123,22 +127,71 @@ namespace nandroidfs {
 		}
 	}
 
-	const LPCWSTR ADB_PATH = L"adb"; // TODO: Allow user of driver to specify adb path.
+	std::atomic<LPCWSTR> adb_invoke_path = nullptr;
+
+	// Checks if the ADB installation at the given path exists.
+	bool adb_install_exists(LPCWSTR invoke_path) {
+		PROCESS_INFORMATION process_info;
+		STARTUPINFO start_info;
+		ZeroMemory(&process_info, sizeof(PROCESS_INFORMATION));
+		ZeroMemory(&start_info, sizeof(STARTUPINFO));
+		start_info.cb = sizeof(STARTUPINFO);
+		start_info.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+		start_info.hStdError = nullptr;
+		start_info.hStdOutput = nullptr;
+		start_info.hStdInput = nullptr;
+		// ...use nullptr for each handle to ensure that the stdout/err doesn't go anywhere
+		// NB: Cannot find any documentation to support this but seems to work.
+		start_info.wShowWindow = SW_HIDE;
+
+		LPWSTR nonconst_invoke_path = non_constify_string(invoke_path);
+		bool success = CreateProcess(nullptr, nonconst_invoke_path, nullptr, nullptr, true, 0, nullptr, nullptr, &start_info, &process_info);
+		CloseHandle(process_info.hThread);
+		CloseHandle(process_info.hProcess);
+
+		// TODO: Verify got correct error
+		return success;
+	}
+
+	LPCWSTR find_adb_path() {
+		LPCWSTR current = adb_invoke_path.load();
+		if (current) {
+			return current;
+		}
+		
+		// Check if ADB exists on PATH, and use this version if so
+		if (adb_install_exists(L"adb")) {
+			adb_invoke_path.store(L"adb");
+			return L"adb";
+		}
+
+		// Otherwise, combine the executable path with the expected 
+		// location of `platform-tools` as extracted by the installer.
+		LPWSTR included_adb_path = win_path_util::get_abs_path_from_rel_to_exe(L"platform-tools\\adb.exe");
+		if (included_adb_path && adb_install_exists(included_adb_path)) {
+			adb_invoke_path.store(included_adb_path);
+			return included_adb_path;
+		}
+
+		delete[] included_adb_path;
+		throw std::runtime_error("No ADB installation found!");
+	}
+
 	std::string invoke_adb(std::wstring_view args) {
-		std::wstring format_result = std::format(L"{} {}", ADB_PATH, args);
+		std::wstring format_result = std::format(L"{} {}", find_adb_path(), args);
 
 		return invoke_throw_on_nonzero(format_result.c_str());
 	}
 
 	std::string invoke_adb_with_serial(std::wstring_view serial, std::wstring_view args) {
-		std::wstring format_result = std::format(L"{} -s {} {}", ADB_PATH, serial, args);
+		std::wstring format_result = std::format(L"{} -s {} {}", find_adb_path(), serial, args);
 
 		return invoke_throw_on_nonzero(format_result.c_str());
 	}
 
 	int invoke_adb_capture_output(std::wstring_view serial, std::wstring_view args, OutputCapture consume_output) 
 	{
-		std::wstring format_result = std::format(L"{} -s {} {}", ADB_PATH, serial, args);
+		std::wstring format_result = std::format(L"{} -s {} {}", find_adb_path(), serial, args);
 		
 		int exit_code;
 		invoke_process_capture_output(format_result.c_str(), exit_code, consume_output, /* prevent Ctrl+C interrupts: */ CREATE_NEW_PROCESS_GROUP);

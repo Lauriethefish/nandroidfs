@@ -57,6 +57,9 @@
     <ClCompile Include="TrayMenu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="win_path_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Nandroid.hpp">
@@ -112,6 +115,9 @@
     </ClInclude>
     <ClInclude Include="resource2.h">
       <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="win_path_util.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,5 +1,6 @@
 #include "TrayMenu.hpp"
 #include "dokan_no_winsock.h"
+#include "win_path_util.hpp"
 #include <iostream>
 
 
@@ -51,11 +52,6 @@ namespace nandroidfs {
 			UnregisterClass(window_class_name, hInstance);
 		}
 	}
-
-	// The (MSVC) linker provides this symbol in order to locate the HMODULE 
-	// for the currently executing module.
-	EXTERN_C IMAGE_DOS_HEADER __ImageBase;
-	#define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
 
 	bool TrayMenuManager::initialise() {
 		if (initialised) {
@@ -150,17 +146,11 @@ namespace nandroidfs {
 	}
 
 	bool TrayMenuManager::load_window_icon() {
-		// Find the path of the current executable
-		const int EXE_BUF_SIZE = 512;
-		char* exe_path_buffer = new char[EXE_BUF_SIZE];
-		if (GetModuleFileNameA(HINST_THISCOMPONENT, exe_path_buffer, EXE_BUF_SIZE) == 0) {
-			delete[] exe_path_buffer;
-			return false;
-		}
+		LPWSTR exe_path = win_path_util::get_exe_path();
 
 		// Grab the (nandroidfs) icon from the current executable.
-		exe_icon = ExtractIconA(hInstance, exe_path_buffer, 0);
-		delete[] exe_path_buffer;
+		exe_icon = ExtractIcon(hInstance, exe_path, 0);
+		delete[] exe_path;
 
 		return exe_icon != NULL;
 	}
