@@ -130,6 +130,7 @@ namespace nandroidfs {
 	std::atomic<LPCWSTR> adb_invoke_path = nullptr;
 
 	// Checks if the ADB installation at the given path exists.
+	// `invoke_path` must be quoted if it contains spaces.
 	bool adb_install_exists(LPCWSTR invoke_path) {
 		PROCESS_INFORMATION process_info;
 		STARTUPINFO start_info;
@@ -168,12 +169,25 @@ namespace nandroidfs {
 		// Otherwise, combine the executable path with the expected 
 		// location of `platform-tools` as extracted by the installer.
 		LPWSTR included_adb_path = win_path_util::get_abs_path_from_rel_to_exe(L"platform-tools\\adb.exe");
-		if (included_adb_path && adb_install_exists(included_adb_path)) {
-			adb_invoke_path.store(included_adb_path);
-			return included_adb_path;
+		if (included_adb_path) {
+			int included_path_len = lstrlenW(included_adb_path);
+			// Wrap the path in quotes as "Program Files" has a space.
+			LPWSTR quoted_adb_path = new WCHAR[included_path_len + 3];
+			quoted_adb_path[0] = L'"';
+			quoted_adb_path[included_path_len + 2] = 0;
+			quoted_adb_path[included_path_len + 1] = L'"';
+			memcpy(quoted_adb_path + 1, included_adb_path, included_path_len * 2);
+
+			delete[] included_adb_path;
+
+			if (adb_install_exists(quoted_adb_path)) {
+				adb_invoke_path.store(quoted_adb_path);
+				return quoted_adb_path;
+			}
+
+			delete[] quoted_adb_path;
 		}
 
-		delete[] included_adb_path;
 		throw std::runtime_error("No ADB installation found!");
 	}
 
