@@ -1,6 +1,10 @@
 # Installs dependencies needed for NandroidFS to build (i.e. dokan)
 # This includes the Android NDK if the envvar ANDROID_NDK_HOME is not set.
 
+# Apparently the progress bar for Invoke-WebRequest updates every byte
+# This makes all download requests INSANELY slow so we will turn it off.
+$ProgressPreference = 'SilentlyContinue'
+
 # Dependency temp paths
 $DependenciesTemp = "./dependencies"
 $DokanSourceTemp = "$DependenciesTemp/dokan_source.zip"
@@ -88,7 +92,7 @@ if(-not (Test-Path -Path $InnoSetupHome)) {
 # Download platform-tools and put this in the directory in `./installer` to be included with the app.
 if(-not (Test-Path -Path $PlatformToolsResultingPath)) {
     Write-Output "Downloading platform-tools"
-    
+
     Invoke-WebRequest $PlatformToolsUrl -OutFile $PlatformToolsTemp
     Expand-Archive $PlatformToolsTemp -DestinationPath $PlatformToolsExtractInto
     Remove-Item $PlatformToolsTemp
