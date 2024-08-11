@@ -7,3 +7,4 @@ Nandroid_daemon/obj/
 dependencies/
 installer/*.msi
 installer/*.exe
+installer/platform-tools

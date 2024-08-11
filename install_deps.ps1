@@ -11,6 +11,10 @@ $InnoUrl = "https://jrsoftware.org/download.php/is.exe?site=2"
 $InnoTemp = "$DependenciesTemp/innosetupsetup.exe"
 $NdkTemp = "$DependenciesTemp/android_ndk.zip"
 $NdkExtractTemp = "$DependenciesTemp/android_ndk"
+$PlatformToolsExtractInto = "./installer/"
+$PlatformToolsResultingPath = "./installer/platform-tools"
+$PlatformToolsTemp = "./installer/platform-tools.zip"
+$PlatformToolsUrl = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
 
 $NandroidDepsPath = "./nandroidfs/dependencies"
 $NandroidIncludePath = "$NandroidDepsPath/include"
@@ -79,4 +83,13 @@ if(-not (Test-Path -Path $InnoSetupHome)) {
     Write-Output "Installing inno setup"
     & $InnoTemp /VERYSILENT /NORESTART /ALLUSERS
     Remove-Item $InnoTemp
+}
+
+# Download platform-tools and put this in the directory in `./installer` to be included with the app.
+if(-not (Test-Path -Path $PlatformToolsResultingPath)) {
+    Write-Output "Downloading platform-tools"
+    
+    Invoke-WebRequest $PlatformToolsUrl -OutFile $PlatformToolsTemp
+    Expand-Archive $PlatformToolsTemp -DestinationPath $PlatformToolsExtractInto
+    Remove-Item $PlatformToolsTemp
 }

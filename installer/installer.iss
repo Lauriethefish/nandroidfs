@@ -48,6 +48,7 @@ end.
 [Files]
 Source: "..\x64\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; BeforeInstall: CheckDokanPresent
 Source: "..\x64\Release\*"; DestDir: "{app}"; Flags: ignoreversion;
+Source: ".\platform-tools\*"; DestDir: "{app}\platform-tools"; Flags: ignoreversion;
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
