@@ -349,10 +349,10 @@ namespace nandroidfs {
         }
 
         // Use the `access` syscall to see if we can actually read/write/ex the file with this mode.
-        if(faccessat(0, parent_dir_path->c_str(), R_OK | W_OK | X_OK, AT_EACCESS)) {
-            return ResponseStatus::Success;
-        }   else    {
+        if(access(parent_dir_path->c_str(), R_OK | W_OK | X_OK)) {
             return get_status_from_errno();
+        }   else    {
+            return ResponseStatus::Success;
         }
     }
 
