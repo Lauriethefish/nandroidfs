@@ -21,11 +21,11 @@ rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 include $(CLEAR_VARS)
 LOCAL_MODULE := nandroid-daemon
 LOCAL_SRC_FILES += $(call rwildcard,./src/,*.cpp)
-LOCAL_SRC_FILES += $(call rwildcard,../Nandroid_shared/,*.cpp)
+LOCAL_SRC_FILES += $(call rwildcard,../nandroid_shared/,*.cpp)
 LOCAL_LDLIBS += -llog
 LOCAL_CFLAGS += -DID='"nandroid-daemon"' -save-temps=obj
 LOCAL_CPP_FEATURES += exceptions
 LOCAL_CPPFLAGS += -std=c++2a
 LOCAL_C_INCLUDES += ./include
-LOCAL_C_INCLUDES += ../Nandroid_shared
+LOCAL_C_INCLUDES += ../nandroid_shared
 include $(BUILD_EXECUTABLE)
